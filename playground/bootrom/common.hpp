@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#define uint32_t unsigned int
 
 #ifdef USE_ATOMIC
 #include <atomic>

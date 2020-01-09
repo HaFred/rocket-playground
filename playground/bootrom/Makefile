@@ -2,7 +2,7 @@ BAUD_DIV ?= 260
 RESET_ADDR ?= 0x10040
 UART_ADDR ?= 0x10012000
 CPPFLAGS += -DBAUD_DIV=$(BAUD_DIV) -DRESET_ADDR=$(RESET_ADDR) -DUART_ADDR=$(UART_ADDR)
-CFLAGS += -march=rv64g -nostdlib -O2 -static -ggdb3
+CFLAGS += -march=rv64imac -mabi=lp64 -nostdlib -nostdinc -O2 -static -ggdb3 -mcmodel=medany
 CXXFLAGS += $(CFLAGS)
 CC=riscv64-linux-gnu-gcc
 CXX=riscv64-linux-gnu-g++
