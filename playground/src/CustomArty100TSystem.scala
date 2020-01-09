@@ -41,7 +41,7 @@ class CustomArty100TRocketSystemModuleImp[+L <: CustomArty100TRocketSystem](_out
 class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
   case RocketTilesKey => {
     val small = RocketTileParams(
-      core = RocketCoreParams(useVM = true, fpu = None, mulDiv = None),
+      core = RocketCoreParams(useVM = true, fpu = None, mulDiv = None, nBreakpoints = 8),
       btb = None,
       dcache = Some(DCacheParams(
         rowBits = site(SystemBusKey).beatBits,
