@@ -62,11 +62,16 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
 
 class CustomArty100TConfig extends Config(
   new Config((site, here, up) => {
-    case BootROMParams => new BootROMParams(contentFileName = "playground/bootrom/boot.bin", hang = 0x10000)
+    case BootROMParams => new BootROMParams(contentFileName = "rocketchip/bootrom/bootrom.img")
     case PeripheryUARTKey => List(
       UARTParams(address = 0x10012000),
     )
-    case PeripherySPIFlashKey => List(SPIFlashParams(fAddress = 0x20000000, rAddress = 0x10014000, sampleDelayBits = 3))
+    case PeripherySPIFlashKey => List(
+      // Arty100T has 16MB QSPI
+      SPIFlashParams(fAddress = 0x20000000, fSize = 0x01000000, rAddress = 0x10014000, sampleDelayBits = 3),
+      // let's vendor a SD Card at 4GB
+      SPIFlashParams(fAddress = BigInt("100000000", 16), fSize = 0x8000000, rAddress = 0x10015000, sampleDelayBits = 3)
+    )
   }) ++
     new WithNCustomArty100TCores(2) ++
     new WithJtagDTM ++

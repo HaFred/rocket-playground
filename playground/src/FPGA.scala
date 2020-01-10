@@ -17,7 +17,6 @@ class FPGATop extends MultiIOModule {
   val top = Module(LazyModule(configToRocketModule(classOf[CustomArty100TRocketSystem], new CustomArty100TConfig)).module)
 
   val topInterrupts: UInt = top.interrupts
-  /** TODO */
   val fpgaInterrupts = IO(Input(topInterrupts.cloneType))
   fpgaInterrupts <> topInterrupts
 
@@ -54,7 +53,7 @@ class FPGATop extends MultiIOModule {
 
 
   val topJtag: SystemJTAGIO = top.debug.head.systemjtag.head
-  val fpgaJtag = IO(new Bundle() {
+  val fpgaJtag = IO(new Bundle {
     val tck = Analog(1.W)
     val tms = Analog(1.W)
     val tdi = Analog(1.W)
@@ -71,4 +70,28 @@ class FPGATop extends MultiIOModule {
   PULLUP(fpgaJtag.tdi)
   IOBUF(fpgaJtag.tdo, topJtag.jtag.TDO.data)
   PULLUP(fpgaJtag.tdo)
+
+  /** second QSPI will become SDIO */
+  val topSDIO: SPIPortIO = top.qspi.last.asInstanceOf[SPIPortIO]
+
+  val fpgaSDIO = IO(new Bundle {
+    val cmd = Analog(1.W)
+    val sck = Analog(1.W)
+    val dat = Vec(4, Analog(1.W))
+  })
+
+  val misoSync = RegInit(VecInit(Seq.fill(2)(false.B)))
+  val miso = Wire(Bool())
+  val mosi = Wire(Bool())
+  mosi := topSDIO.dq(0).o
+  misoSync(0) := miso
+  misoSync(1) := misoSync(0)
+  topSDIO.dq(0).i := false.B
+  topSDIO.dq(1).i := false.B
+  topSDIO.dq(2).i := misoSync(1)
+  topSDIO.dq(3).i := false.B
+  IOBUF(fpgaSDIO.sck, topSDIO.sck)
+  IOBUF(fpgaSDIO.cmd, mosi)
+  miso := IOBUF(fpgaSDIO.dat(0))
+  IOBUF(fpgaSDIO.dat(3), topSDIO.cs(0))
 }
