@@ -77,7 +77,8 @@ class FPGATop extends MultiIOModule {
   val fpgaSDIO = IO(new Bundle {
     val cmd = Analog(1.W)
     val sck = Analog(1.W)
-    val dat = Vec(4, Analog(1.W))
+    val data0 = Analog(1.W)
+    val data3 = Analog(1.W)
   })
 
   val misoSync = RegInit(VecInit(Seq.fill(2)(false.B)))
@@ -92,6 +93,6 @@ class FPGATop extends MultiIOModule {
   topSDIO.dq(3).i := false.B
   IOBUF(fpgaSDIO.sck, topSDIO.sck)
   IOBUF(fpgaSDIO.cmd, mosi)
-  miso := IOBUF(fpgaSDIO.dat(0))
-  IOBUF(fpgaSDIO.dat(3), topSDIO.cs(0))
+  miso := IOBUF(fpgaSDIO.data0)
+  IOBUF(fpgaSDIO.data3, topSDIO.cs(0))
 }
