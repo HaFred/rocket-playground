@@ -34,27 +34,19 @@ class BSCANE2 extends ExtModule(Map("JTAG_CHAIN" -> 4)) {
 }
 
 class BscanJTAG extends MultiIOModule {
-  val tck: Bool = IO(Output(Bool()))
+  val tck: Clock = IO(Output(Clock()))
   val tms: Bool = IO(Output(Bool()))
   val tdi: Bool = IO(Output(Bool()))
   val tdo: Bool = IO(Input(Bool()))
   val tdoEnable: Bool = IO(Input(Bool()))
 
   val bscane2: BSCANE2 = Module(new BSCANE2)
-  val bscane2Capture = bscane2.CAPTURE
-  val bscane2Drck = bscane2.DRCK
-  val bscane2Reset = bscane2.RESET
-  val bscane2Runtest = bscane2.RUNTEST
-  val bscane2Sel = bscane2.SEL
-  val bscane2Tck = bscane2.TCK
   tdi := bscane2.TDI
   bscane2.TDO := Mux(tdoEnable, tdo, true.B)
-  val bscane2Tdo = bscane2.TDO
-
   val bufgce = new BUFGCE
   bufgce.I := bscane2.TCK
   bufgce.CE := bscane2.SEL
-  tck := bufgce.O
+  tck := bufgce.O.asClock
 
   val posClock: Clock = bscane2.TCK.asClock
   val negClock: Clock = (!bscane2.TCK).asClock
@@ -90,7 +82,6 @@ class BscanJTAG extends MultiIOModule {
       )
     }
   }
-
 }
 
 
@@ -134,23 +125,16 @@ class FPGATop extends MultiIOModule {
 
 
   val topJtag: SystemJTAGIO = top.debug.head.systemjtag.head
-  val fpgaJtag = IO(new Bundle {
-    val tck = Analog(1.W)
-    val tms = Analog(1.W)
-    val tdi = Analog(1.W)
-    val tdo = Analog(1.W)
-  })
+  val fpgaJtag = new BscanJTAG
   topJtag.reset := reset
   topJtag.mfr_id := 0x489.U(11.W)
   topJtag.part_number := 0.U(16.W)
   topJtag.version := 2.U(4.W)
-  topJtag.jtag.TCK := IBUFG(IOBUF(fpgaJtag.tck).asClock)
-  topJtag.jtag.TMS := IOBUF(fpgaJtag.tms)
-  PULLUP(fpgaJtag.tms)
-  topJtag.jtag.TDI := IOBUF(fpgaJtag.tdi)
-  PULLUP(fpgaJtag.tdi)
-  IOBUF(fpgaJtag.tdo, topJtag.jtag.TDO.data)
-  PULLUP(fpgaJtag.tdo)
+  topJtag.jtag.TCK := fpgaJtag.tck
+  topJtag.jtag.TMS := fpgaJtag.tms
+  topJtag.jtag.TDI := fpgaJtag.tdi
+  fpgaJtag.tdo := topJtag.jtag.TDO.data
+  fpgaJtag.tdoEnable := topJtag.jtag.TDO.driven
 
   /** second QSPI will become SDIO */
   val topSDIO: SPIPortIO = top.qspi.last.asInstanceOf[SPIPortIO]
