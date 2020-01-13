@@ -43,7 +43,7 @@ class BscanJTAG extends MultiIOModule {
   val bscane2: BSCANE2 = Module(new BSCANE2)
   tdi := bscane2.TDI
   bscane2.TDO := Mux(tdoEnable, tdo, true.B)
-  val bufgce = new BUFGCE
+  val bufgce = Module(new BUFGCE)
   bufgce.I := bscane2.TCK
   bufgce.CE := bscane2.SEL
   tck := bufgce.O.asClock
