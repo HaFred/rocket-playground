@@ -11,7 +11,7 @@ import playground._
 import sifive.fpgashells.ip.xilinx._
 import chisel3._
 import chisel3.util._
-import chisel3.experimental._
+import chisel3.experimental.{ExtModule, Analog, attach}
 
 class BUFGCE extends ExtModule {
   val O = IO(Output(Bool()))
