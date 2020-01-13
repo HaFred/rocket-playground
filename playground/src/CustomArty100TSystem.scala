@@ -62,6 +62,11 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
 
 class CustomArty100TConfig extends Config(
   new Config((site, here, up) => {
+    case ExtMem => Some(MemoryPortParams(MasterPortParams(
+      base = 0x8000000,
+      size = 0x4000000,
+      beatBytes = site(MemoryBusKey).beatBytes,
+      idBits = 4), 1))
     case BootROMParams => new BootROMParams(contentFileName = "rocketchip/bootrom/bootrom.img")
     case PeripheryUARTKey => List(
       UARTParams(address = 0x10012000),

@@ -140,9 +140,13 @@ class FPGATop extends MultiIOModule {
   val topSDIO: SPIPortIO = top.qspi.last.asInstanceOf[SPIPortIO]
 
   val fpgaSDIO = IO(new Bundle {
+    /**pmod 3*/
     val cmd = Analog(1.W)
+    /**pmod 4*/
     val sck = Analog(1.W)
+    /**pmod 8*/
     val data0 = Analog(1.W)
+    /**pmod 10*/
     val data3 = Analog(1.W)
   })
 
