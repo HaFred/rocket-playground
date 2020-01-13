@@ -125,7 +125,7 @@ class FPGATop extends MultiIOModule {
 
 
   val topJtag: SystemJTAGIO = top.debug.head.systemjtag.head
-  val fpgaJtag = new BscanJTAG
+  val fpgaJtag = Module(new BscanJTAG)
   topJtag.reset := reset
   topJtag.mfr_id := 0x489.U(11.W)
   topJtag.part_number := 0.U(16.W)
