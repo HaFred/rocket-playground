@@ -66,7 +66,7 @@ class BscanJTAG extends MultiIOModule {
         shiftCounter := Cat(bscane2.TDI, shiftCounter >> 1 << 1)
       }
       when(posCounter === 0.U) {
-        tdiRegister := bscane2.TDI
+        tdiRegister := !bscane2.TDI
       }
       tdiRegisterWire := tdiRegister
       shiftCounterWire := shiftCounter
