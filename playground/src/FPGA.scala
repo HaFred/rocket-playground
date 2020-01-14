@@ -55,7 +55,7 @@ class BscanJTAG extends MultiIOModule {
    * generated at [[posClock]], used in [[negClock]]
    * */
   val tdiRegisterWire = Wire(Bool())
-  val shiftCounterWire = WireDefault(0.U(7.W))
+  val shiftCounterWire = Wire(UInt(7.W))
   withReset(!bscane2.SHIFT) {
     withClock(posClock) {
       val shiftCounter = RegInit(0.U(7.W))
@@ -63,7 +63,7 @@ class BscanJTAG extends MultiIOModule {
       val tdiRegister = RegInit(false.B)
       posCounter := posCounter + 1.U
       when(posCounter >= 1.U && posCounter <= 7.U) {
-        shiftCounter := Cat(bscane2.TDI, shiftCounter >> 1 << 1)
+        shiftCounter := Cat(bscane2.TDI, shiftCounter.head(6))
       }
       when(posCounter === 0.U) {
         tdiRegister := !bscane2.TDI
