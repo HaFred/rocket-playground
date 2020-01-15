@@ -63,8 +63,8 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
 class CustomArty100TConfig extends Config(
   new Config((site, here, up) => {
     case ExtMem => Some(MemoryPortParams(MasterPortParams(
-      base = 0x8000000,
-      size = 0x4000000,
+      base = BigInt("80000000", 16),
+      size = BigInt("40000000", 16),
       beatBytes = site(MemoryBusKey).beatBytes,
       idBits = 4), 1))
     case BootROMParams => new BootROMParams(contentFileName = "rocketchip/bootrom/bootrom.img")
@@ -72,9 +72,7 @@ class CustomArty100TConfig extends Config(
       UARTParams(address = 0x10012000),
     )
     case PeripherySPIFlashKey => List(
-      // Arty100T has 16MB QSPI
       SPIFlashParams(fAddress = 0x20000000, fSize = 0x01000000, rAddress = 0x10014000, sampleDelayBits = 3),
-      // let's vendor a SD Card at 4GB
       SPIFlashParams(fAddress = BigInt("100000000", 16), fSize = 0x8000000, rAddress = 0x10015000, sampleDelayBits = 3)
     )
   }) ++
