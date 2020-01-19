@@ -118,9 +118,8 @@ class FPGATop extends MultiIOModule {
       val pad = Module(new IOBUF)
       pad.io.I := topSPI.dq(i).o
       topSPI.dq(i).i := pad.io.O
-      pad.io.T := topSPI.dq(i).oe
-      attach(pad.io.IO, io)
-      PULLUP(io)
+      pad.io.T := ~topSPI.dq(i).oe
+      attach(io, pad.io.IO)
   }
 
 
@@ -135,33 +134,4 @@ class FPGATop extends MultiIOModule {
   topJtag.jtag.TDI := fpgaJtag.tdi
   fpgaJtag.tdo := topJtag.jtag.TDO.data
   fpgaJtag.tdoEnable := topJtag.jtag.TDO.driven
-
-  /** second QSPI will become SDIO */
-  val topSDIO: SPIPortIO = top.qspi.last.asInstanceOf[SPIPortIO]
-
-  val fpgaSDIO = IO(new Bundle {
-    /** pmod 3 */
-    val cmd = Analog(1.W)
-    /** pmod 4 */
-    val sck = Analog(1.W)
-    /** pmod 8 */
-    val data0 = Analog(1.W)
-    /** pmod 10 */
-    val data3 = Analog(1.W)
-  })
-
-  val misoSync = RegInit(VecInit(Seq.fill(2)(false.B)))
-  val miso = Wire(Bool())
-  val mosi = Wire(Bool())
-  mosi := topSDIO.dq(0).o
-  misoSync(0) := miso
-  misoSync(1) := misoSync(0)
-  topSDIO.dq(0).i := false.B
-  topSDIO.dq(1).i := false.B
-  topSDIO.dq(2).i := misoSync(1)
-  topSDIO.dq(3).i := false.B
-  IOBUF(fpgaSDIO.sck, topSDIO.sck)
-  IOBUF(fpgaSDIO.cmd, mosi)
-  miso := IOBUF(fpgaSDIO.data0)
-  IOBUF(fpgaSDIO.data3, topSDIO.cs(0))
 }

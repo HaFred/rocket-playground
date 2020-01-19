@@ -76,8 +76,7 @@ class CustomArty100TConfig extends Config(
       UARTParams(address = 0x10012000),
     )
     case PeripherySPIFlashKey => List(
-      SPIFlashParams(fAddress = 0x20000000, fSize = 0x01000000, rAddress = 0x10014000, sampleDelayBits = 3),
-      SPIFlashParams(fAddress = BigInt("100000000", 16), fSize = 0x8000000, rAddress = 0x10015000, sampleDelayBits = 3)
+      SPIFlashParams(fAddress = 0x20000000, fSize = 0x10000000, rAddress = 0x10013000)
     )
   }) ++
     new WithNCustomArty100TCores(2) ++
