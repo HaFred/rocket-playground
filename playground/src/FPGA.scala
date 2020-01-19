@@ -112,14 +112,13 @@ class FPGATop extends MultiIOModule {
   })
 
   IOBUF(fpgaSPI.sck, topSPI.sck)
-  /** ku040 need CSn in top */
-  IOBUF(fpgaSPI.cs, !topSPI.cs(0))
+  IOBUF(fpgaSPI.cs, topSPI.cs(0))
   fpgaSPI.dq.zipWithIndex.foreach {
     case (io: Analog, i: Int) =>
       val pad = Module(new IOBUF)
       pad.io.I := topSPI.dq(i).o
       topSPI.dq(i).i := pad.io.O
-      pad.io.T := ~topSPI.dq(i).oe
+      pad.io.T := topSPI.dq(i).oe
       attach(pad.io.IO, io)
       PULLUP(io)
   }
