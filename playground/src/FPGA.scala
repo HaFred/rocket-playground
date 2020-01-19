@@ -8,10 +8,57 @@ import sifive.blocks.devices._
 import uart._
 import spi._
 import playground._
-import sifive.fpgashells.ip.xilinx._
 import chisel3._
 import chisel3.util._
 import chisel3.experimental.{ExtModule, Analog, attach}
+
+class AnalogToUInt(w: Int = 1) extends BlackBox with HasBlackBoxInline {
+  val io = IO(new Bundle {
+    val a = Analog(w.W)
+    val b = Output(UInt(w.W))
+  })
+  setInline(s"atu_${w.toString}.v",
+    s"""module AnalogToUInt (a, b);
+       |   inout [${w - 1}:0] a;
+       |   output [${w - 1}:0] b;
+       |   assign b = a;
+       |endmodule
+       |""".stripMargin)
+}
+
+object AnalogToUInt {
+  def apply(a: Analog): UInt = {
+    val a2b = Module(new AnalogToUInt(w = a.getWidth))
+    attach(a, a2b.io.a)
+    a2b.io.b
+  }
+}
+
+class UIntToAnalog(w: Int = 1) extends BlackBox with HasBlackBoxInline {
+  val io = IO(new Bundle {
+    val a = Analog(w.W)
+    val b = Input(UInt(w.W))
+    val b_en = Input(Bool())
+  })
+  require(w >= 1)
+  setInline(s"uta_${w.toString}.v",
+    s"""module UIntToAnalog (a, b, b_en);
+       |   inout [${w - 1}:0] a;
+       |   input [${w - 1}:0] b;
+       |   input b_en;
+       |   assign a = b_en ? b : $w'b${"z".repeat(w)};
+       |endmodule
+       |""".stripMargin)
+}
+
+object UIntToAnalog {
+  def apply(b: UInt, a: Analog, b_en: Bool): Unit = {
+    val a2b = Module(new UIntToAnalog(w = a.getWidth))
+    attach(a, a2b.io.a)
+    a2b.io.b := b
+    a2b.io.b_en := b_en
+  }
+}
 
 class BUFGCE extends ExtModule {
   val O = IO(Output(Bool()))
@@ -101,8 +148,8 @@ class FPGATop extends MultiIOModule {
     val txd = Analog(1.W)
     val rxd = Analog(1.W)
   })
-  IOBUF(fpgaUART.rxd, topUART.txd)
-  topUART.rxd := IOBUF(fpgaUART.txd)
+  topUART.rxd := AnalogToUInt(fpgaUART.txd)
+  UIntToAnalog(topUART.txd, fpgaUART.rxd, true.B)
 
   val topSPI: SPIPortIO = top.qspi.head.asInstanceOf[SPIPortIO]
   val fpgaSPI = IO(new Bundle {
@@ -110,16 +157,13 @@ class FPGATop extends MultiIOModule {
     val cs = Analog(1.W)
     val dq = Vec(4, Analog(1.W))
   })
+  UIntToAnalog(topSPI.sck, fpgaSPI.sck, true.B)
+  UIntToAnalog(topSPI.cs(0), fpgaSPI.cs, true.B)
 
-  IOBUF(fpgaSPI.sck, topSPI.sck)
-  IOBUF(fpgaSPI.cs, topSPI.cs(0))
   fpgaSPI.dq.zipWithIndex.foreach {
     case (io: Analog, i: Int) =>
-      val pad = Module(new IOBUF)
-      pad.io.I := topSPI.dq(i).o
-      topSPI.dq(i).i := pad.io.O
-      pad.io.T := ~topSPI.dq(i).oe
-      attach(io, pad.io.IO)
+      UIntToAnalog(topSPI.dq(i).o, io, topSPI.dq(i).oe)
+      topSPI.dq(i).i := AnalogToUInt(io)
   }
 
 
