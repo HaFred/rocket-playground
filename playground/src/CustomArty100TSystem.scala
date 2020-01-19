@@ -62,6 +62,10 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
 
 class CustomArty100TConfig extends Config(
   new Config((site, here, up) => {
+    case PeripheryBusKey => PeripheryBusParams(
+      beatBytes = site(XLen)/8,
+      blockBytes = site(CacheBlockBytes),
+      dtsFrequency = Some(50000000))
     case ExtMem => Some(MemoryPortParams(MasterPortParams(
       base = BigInt("80000000", 16),
       size = BigInt("40000000", 16),

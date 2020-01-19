@@ -53,7 +53,7 @@ class BscanJTAG extends MultiIOModule {
   /**
    * This two wire will cross two clock domain,
    * generated at [[posClock]], used in [[negClock]]
-   * */
+   **/
   val tdiRegisterWire = Wire(Bool())
   val shiftCounterWire = Wire(UInt(7.W))
   withReset(!bscane2.SHIFT) {
@@ -112,7 +112,8 @@ class FPGATop extends MultiIOModule {
   })
 
   IOBUF(fpgaSPI.sck, topSPI.sck)
-  IOBUF(fpgaSPI.cs, topSPI.cs(0))
+  /** ku040 need CSn in top */
+  IOBUF(fpgaSPI.cs, !topSPI.cs(0))
   fpgaSPI.dq.zipWithIndex.foreach {
     case (io: Analog, i: Int) =>
       val pad = Module(new IOBUF)
@@ -140,13 +141,13 @@ class FPGATop extends MultiIOModule {
   val topSDIO: SPIPortIO = top.qspi.last.asInstanceOf[SPIPortIO]
 
   val fpgaSDIO = IO(new Bundle {
-    /**pmod 3*/
+    /** pmod 3 */
     val cmd = Analog(1.W)
-    /**pmod 4*/
+    /** pmod 4 */
     val sck = Analog(1.W)
-    /**pmod 8*/
+    /** pmod 8 */
     val data0 = Analog(1.W)
-    /**pmod 10*/
+    /** pmod 10 */
     val data3 = Analog(1.W)
   })
 
