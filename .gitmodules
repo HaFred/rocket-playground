@@ -13,3 +13,12 @@
 [submodule "shells"]
 	path = shells
 	url = https://github.com/sifive/fpga-shells
+[submodule "testsocket"]
+	path = testsocket
+	url = ./testsocket
+[submodule "nvdla"]
+	path = nvdla
+	url = https://github.com/sifive/block-nvdla-sifive/
+[submodule "freedom"]
+	path = freedom
+	url = ./freedom

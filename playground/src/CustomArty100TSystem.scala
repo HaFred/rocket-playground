@@ -4,14 +4,18 @@ package arty100t
 
 /** rocketchip dependency */
 
-import chipsalliance.rocketchip.config.Config
 import freechips.rocketchip._
 import config._
-import devices.tilelink._
-import freechips.rocketchip.devices.debug.HasPeripheryDebugModuleImp
-import freechips.rocketchip.rocket._
-import freechips.rocketchip.tile._
 import subsystem._
+import devices._
+import debug._
+import diplomaticobjectmodel._
+import devices.tilelink._
+import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree
+import freechips.rocketchip.diplomaticobjectmodel.model.OMComponent
+import freechips.rocketchip.util.ElaborationArtefacts
+import rocket._
+import tile._
 
 /** sifive blocks dependency */
 import sifive.blocks.devices._
@@ -63,7 +67,7 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
 class CustomArty100TConfig extends Config(
   new Config((site, here, up) => {
     case PeripheryBusKey => PeripheryBusParams(
-      beatBytes = site(XLen)/8,
+      beatBytes = site(XLen) / 8,
       blockBytes = site(CacheBlockBytes),
       dtsFrequency = Some(50000000))
     case ExtMem => Some(MemoryPortParams(MasterPortParams(

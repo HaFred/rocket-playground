@@ -8,7 +8,7 @@ import wishbone._
 import system._
 import diplomacy._
 import devices.tilelink._
-import freechips.rocketchip.subsystem._
+import subsystem._
 import arty100t._
 
 object play extends TestSuite {
@@ -30,6 +30,10 @@ object play extends TestSuite {
     }
     test("arty") {
       chisel3.Driver.emitVerilog(new FPGATop)
+    }
+    test("svd") {
+      val lm = LazyModule(configToRocketModule(classOf[CustomArty100TRocketSystem], new CustomArty100TConfig))
+      RocketModuleToSvd(lm)
     }
   }
 }

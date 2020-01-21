@@ -50,11 +50,38 @@ object shells extends CommonModule with SbtModule {
   def moduleDeps = Seq(rocketchip, blocks)
 }
 
+object freedom extends CommonModule with SbtModule {
+  def moduleDeps = Seq(rocketchip, blocks, nvdla, shells)
+}
+
+object nvdla extends CommonModule with SbtModule {
+  def moduleDeps = Seq(rocketchip)
+}
+
+object skeleton extends CommonModule { 
+  def millSourcePath = testsocket.basePath
+
+  def moduleDeps = Seq(rocketchip, blocks, shells)
+}
+
+object testsocket extends CommonModule { outer =>
+  def basePath = super.millSourcePath
+
+  def millSourcePath = super.millSourcePath / 'design / 'craft / "fpga-test-socket" 
+
+  def moduleDeps = Seq(rocketchip, blocks, shells, skeleton)
+}
+
 object playground extends CommonModule {
   def moduleDeps = Seq(rocketchip, inclusivecache, blocks, rocketchip.macros, shells)
-
+  
+  def ivyDeps = Agg(
+    ivy"com.lihaoyi::upickle:0.9.8",
+    ivy"com.lihaoyi::pprint:0.5.8",
+    ivy"org.scala-lang.modules::scala-xml:1.2.0"
+  )
   object tests extends Tests {
-    def ivyDeps = Agg(ivy"com.lihaoyi::utest:0.7.2")
+    def ivyDeps = Agg(ivy"com.lihaoyi::utest:0.7.3")
 
     def testFrameworks = Seq("utest.runner.Framework")
   }
