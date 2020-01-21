@@ -22,3 +22,6 @@
 [submodule "freedom"]
 	path = freedom
 	url = ./freedom
+[submodule "playground/debugger/opensbi"]
+	path = playground/debugger/opensbi
+	url = https://github.com/riscv/opensbi
