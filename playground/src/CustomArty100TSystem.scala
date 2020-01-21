@@ -84,6 +84,7 @@ class CustomArty100TConfig extends Config(
     )
   }) ++
     new WithNCustomArty100TCores(2) ++
+    new WithInclusiveCache(capacityKB = 32) ++
     new WithJtagDTM ++
     new WithDefaultMemPort() ++
     new WithNoMMIOPort() ++
