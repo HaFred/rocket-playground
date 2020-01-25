@@ -1,2 +1,2 @@
-target remote localhost:3333
+target extended-remote :3333
 info threads
