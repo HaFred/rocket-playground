@@ -34,8 +34,8 @@ case class WishboneSlaveParameters(address: Seq[AddressSet],
   )
 }
 
-case class WishboneSlavePortParameters(slaves: Seq[WishboneSlaveParameters],
-                                       beatBytes: Int) {
+case class WBSlavePortParameters(slaves: Seq[WishboneSlaveParameters],
+                                 beatBytes: Int) {
   require(slaves.nonEmpty)
   require(isPow2(beatBytes))
 
@@ -57,24 +57,24 @@ case class WishboneMasterParameters(name: String,
   val userBitsWidth: Int = userBits.map(_.width).sum
 }
 
-case class WishboneMasterPortParameters(masters: Seq[WishboneMasterParameters]) {
+case class WBMasterPortParameters(masters: Seq[WishboneMasterParameters]) {
   val userBitsWidth: Int = masters.map(_.userBitsWidth).max
 }
 
-case class WishboneBundleParameters(addrBits: Int,
-                                    dataBits: Int,
-                                    selectBits: Int,
-                                    dataTagBits: Int = 0,
-                                    addressTagBits: Int = 0,
-                                    clockTagBits: Int = 0,
+case class WBBundleParameters(addrBits: Int,
+                              dataBits: Int,
+                              selectBits: Int,
+                              dataTagBits: Int = 0,
+                              addressTagBits: Int = 0,
+                              clockTagBits: Int = 0,
                                    ) {
   require(dataBits <= 64)
   require(addrBits >= 1)
   require(isPow2(dataBits))
   require(dataBits % selectBits == 0)
 
-  def union(x: WishboneBundleParameters): WishboneBundleParameters = {
-    WishboneBundleParameters(
+  def union(x: WBBundleParameters): WBBundleParameters = {
+    WBBundleParameters(
       max(addrBits, x.addrBits),
       max(dataBits, x.dataBits),
       if (addrBits >= x.addrBits) selectBits else x.selectBits,
@@ -83,25 +83,25 @@ case class WishboneBundleParameters(addrBits: Int,
   }
 }
 
-object WishboneBundleParameters {
-  val emptyBundleParams: WishboneBundleParameters = WishboneBundleParameters(
+object WBBundleParameters {
+  val emptyBundleParams: WBBundleParameters = WBBundleParameters(
     addrBits = 1,
     dataBits = 8,
     selectBits = 1)
 
-  def union(x: Seq[WishboneBundleParameters]): WishboneBundleParameters = x.foldLeft(emptyBundleParams)((x, y) => x.union(y))
+  def union(x: Seq[WBBundleParameters]): WBBundleParameters = x.foldLeft(emptyBundleParams)((x, y) => x.union(y))
 
-  def apply(master: WishboneMasterPortParameters, slave: WishboneSlavePortParameters) =
-    new WishboneBundleParameters(
+  def apply(master: WBMasterPortParameters, slave: WBSlavePortParameters) =
+    new WBBundleParameters(
       addrBits = log2Up(slave.maxAddress + 1),
       dataBits = slave.beatBytes * 8,
       selectBits = slave.beatBytes
     )
 }
 
-case class WishboneEdgeParameters(master: WishboneMasterPortParameters,
-                                  slave: WishboneSlavePortParameters,
-                                  params: Parameters,
-                                  sourceInfo: SourceInfo) {
-  val bundle: WishboneBundleParameters = WishboneBundleParameters(master, slave)
+case class WBEdgeParameters(master: WBMasterPortParameters,
+                            slave: WBSlavePortParameters,
+                            params: Parameters,
+                            sourceInfo: SourceInfo) {
+  val bundle: WBBundleParameters = WBBundleParameters(master, slave)
 }

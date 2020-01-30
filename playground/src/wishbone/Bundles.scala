@@ -4,10 +4,10 @@ import chisel3._
 import chisel3.experimental.DataMirror
 import freechips.rocketchip.util.GenericParameterizedBundle
 
-abstract class WishboneBundleBase(params: WishboneBundleParameters) extends GenericParameterizedBundle(params)
+abstract class WBBundleBase(params: WBBundleParameters) extends GenericParameterizedBundle(params)
 
 // Signal directions are from the master's point-of-view
-class WishboneBundle(params: WishboneBundleParameters) extends WishboneBundleBase(params) {
+class WBBundle(params: WBBundleParameters) extends WBBundleBase(params) {
 
   /**
    * dual-way signals
@@ -141,6 +141,6 @@ class WishboneBundle(params: WishboneBundleParameters) extends WishboneBundleBas
   }
 }
 
-object WishboneBundle {
-  def apply(params: WishboneBundleParameters) = new WishboneBundle(params)
+object WBBundle {
+  def apply(params: WBBundleParameters) = new WBBundle(params)
 }

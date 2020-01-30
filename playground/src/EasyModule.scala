@@ -5,9 +5,9 @@ import config._
 import diplomacy._
 import chisel3._
 
-class WishboneDemoMaster(implicit p: Parameters) extends LazyModule {
-  val s = LazyModule(new WishboneDemoSlave)
-  val node = WishboneMasterNode(Seq(WishboneMasterPortParameters(Seq(WishboneMasterParameters("test")))))
+class WBDemoMaster(implicit p: Parameters) extends LazyModule {
+  val s = LazyModule(new WBDemoSlave)
+  val node = WBMasterNode(Seq(WBMasterPortParameters(Seq(WishboneMasterParameters("test")))))
   s.node := node
   lazy val module: LazyModuleImpLike = new LazyModuleImp(this) {
     val out = node.out.head._1
@@ -35,8 +35,8 @@ class WishboneDemoMaster(implicit p: Parameters) extends LazyModule {
   }
 }
 
-class WishboneDemoSlave(implicit p: Parameters) extends LazyModule {
-  val node = WishboneSlaveNode(Seq(WishboneSlavePortParameters(Seq(WishboneSlaveParameters(Seq(AddressSet(0, 0)))), 8)))
+class WBDemoSlave(implicit p: Parameters) extends LazyModule {
+  val node = WBSlaveNode(Seq(WBSlavePortParameters(Seq(WishboneSlaveParameters(Seq(AddressSet(0, 0)))), 8)))
   lazy val module: LazyModuleImpLike = new LazyModuleImp(this) {
     val in = node.in.head._1
     val reg0 = RegInit(0xff.U)

@@ -2,18 +2,18 @@ import freechips.rocketchip.diplomacy._
 
 package object wishbone {
   type WishboneOutwardNode = OutwardNodeHandle[
-    WishboneMasterPortParameters,
-    WishboneSlavePortParameters,
-    WishboneEdgeParameters,
-    WishboneBundle]
+    WBMasterPortParameters,
+    WBSlavePortParameters,
+    WBEdgeParameters,
+    WBBundle]
   type WishboneInwardNode = InwardNodeHandle[
-    WishboneMasterPortParameters,
-    WishboneSlavePortParameters,
-    WishboneEdgeParameters,
-    WishboneBundle]
+    WBMasterPortParameters,
+    WBSlavePortParameters,
+    WBEdgeParameters,
+    WBBundle]
   type WishboneNode = SimpleNodeHandle[
-    WishboneMasterPortParameters,
-    WishboneSlavePortParameters,
-    WishboneEdgeParameters,
-    WishboneBundle]
+    WBMasterPortParameters,
+    WBSlavePortParameters,
+    WBEdgeParameters,
+    WBBundle]
 }
