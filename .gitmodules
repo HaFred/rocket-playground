@@ -25,3 +25,12 @@
 [submodule "playground/debugger/opensbi"]
 	path = playground/debugger/opensbi
 	url = https://github.com/riscv/opensbi
+[submodule "chiseltest"]
+	path = chiseltest
+	url = https://github.com/ucb-bar/chisel-testers2
+[submodule "chisel3"]
+	path = chisel3
+	url = https://github.com/ucb-bar/chisel3
+[submodule "firrtl"]
+	path = firrtl
+	url = https://github.com/ucb-bar/firrtl
