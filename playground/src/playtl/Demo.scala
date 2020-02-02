@@ -7,6 +7,7 @@ import freechips.rocketchip._
 import diplomacy._
 import tilelink._
 import config._
+import treadle.WriteVcdAnnotation
 
 class DemoTLClient()(implicit p: Parameters) extends LazyModule {
   val node = TLClientNode(Seq(
@@ -30,8 +31,8 @@ class DemoTLClient()(implicit p: Parameters) extends LazyModule {
     val data = Cat(Seq.tabulate(16) { i => i.U | ((count(3, 0) + 1.U) << 4).asUInt }.reverse)
 
     // Bug from chisel Bits, needs freechipsproject/chisel3#1168
-    val (legalg: UInt, gbits) = edge.Get(0.U, addr, size)
-    val (legalp: UInt, pbits) = edge.Put(0.U, addr, size, data)
+    val (legalg: Bool, gbits) = edge.Get(0.U, addr, size)
+    val (legalp: Bool, pbits) = edge.Put(0.U, addr, size, data)
     val legal = Mux(put, legalp, legalg)
     val bits = Mux(put, pbits, gbits)
 
@@ -58,35 +59,36 @@ class DemoTLClient()(implicit p: Parameters) extends LazyModule {
   }
 }
 
-class Bar()(implicit p: Parameters) extends LazyModule {
-  val node = TLManagerNode(Seq())
-
-  val client = LazyModule(new DemoTLClient)
-  val xbar = LazyModule(new TLXbar)
-
-  client.node := xbar.node
-  xbar.node := node
-
-  lazy val module = new LazyModuleImp(this) {
-    val out = IO(node.out.head._1)
-  }
-}
-
-class Foo()(implicit p: Parameters) extends LazyModule {
+class Demo()(implicit p: Parameters) extends LazyModule {
   val ram = LazyModule(new TLRAM(AddressSet(0, 0xfff)))
-  val demo = LazyModule(new DemoTLClient)
+  val client = LazyModule(new DemoTLClient)
 
   ram.node :=
     TLFragmenter(4, 16) :=
-    TLBuffer() :=
     TLWidthWidget(16) :=
-    TLHintHandler() :=
-    demo.node
+    client.node
 
   lazy val module = new LazyModuleImp(this)
 }
 
-object Demo extends App {
-  implicit val p = Parameters.empty
-  new chisel3.stage.ChiselStage run Seq(ChiselGeneratorAnnotation(() => LazyModule(new Foo).module), NoRunFirrtlCompilerAnnotation)
+object DemoEmitter extends App {
+  implicit val p = new Config((site, here, up) => {
+    case MonitorsEnabled => false
+  })
+  new chisel3.stage.ChiselStage run Seq(ChiselGeneratorAnnotation(() => LazyModule(new Demo).module), NoRunFirrtlCompilerAnnotation)
+}
+
+object DemoTester extends App {
+
+  import chiseltest._
+
+  implicit val p = new Config((site, here, up) => {
+    case MonitorsEnabled => false
+  })
+
+  RawTester.test(LazyModule(new Demo).module, Seq(WriteVcdAnnotation)) { c =>
+    c.clock.step(100)
+    true
+  }
+
 }
