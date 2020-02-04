@@ -17,10 +17,11 @@ class DemoTLClient()(implicit p: Parameters) extends LazyModule {
   ))
 
   lazy val module = new LazyModuleImp(this) {
-    val (out, edge) = node.out.head
+    val (out: TLBundle, edge) = node.out.head
 
     require(edge.manager.beatBytes == 16)
 
+    /** address of */
     val addr = RegInit(0.U(13.W))
     val size = RegInit(0.U(4.W))
     val put = RegInit(false.B)
@@ -30,9 +31,8 @@ class DemoTLClient()(implicit p: Parameters) extends LazyModule {
 
     val data = Cat(Seq.tabulate(16) { i => i.U | ((count(3, 0) + 1.U) << 4).asUInt }.reverse)
 
-    // Bug from chisel Bits, needs freechipsproject/chisel3#1168
-    val (legalg: Bool, gbits) = edge.Get(0.U, addr, size)
-    val (legalp: Bool, pbits) = edge.Put(0.U, addr, size, data)
+    val (legalg, gbits) = edge.Get(0.U, addr, size)
+    val (legalp, pbits) = edge.Put(0.U, addr, size, data)
     val legal = Mux(put, legalp, legalg)
     val bits = Mux(put, pbits, gbits)
 
@@ -56,6 +56,17 @@ class DemoTLClient()(implicit p: Parameters) extends LazyModule {
         size := 0.U
       }
     }
+  }
+}
+
+class DemoTLManager()(implicit p: Parameters) extends LazyModule {
+  val node = TLManagerNode(Seq(
+    TLManagerPortParameters(Seq(
+      TLManagerParameters(Seq(AddressSet(0, 0xfff)))
+    ), 4)
+  ))
+  lazy val module = new LazyModuleImp(this) {
+
   }
 }
 
