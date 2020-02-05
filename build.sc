@@ -132,10 +132,18 @@ trait CommonModule extends ScalaModule {
 }
 
 object chiseltest extends CommonModule with SbtModule {
+  override def moduleDeps: Seq[ScalaModule] = super.moduleDeps ++ Seq(treadle)
+  
   override def ivyDeps = super.ivyDeps() ++ Agg(
-    ivy"edu.berkeley.cs::treadle:latest.integration",
     ivy"com.lihaoyi::utest:latest.integration",
     ivy"org.scalatest::scalatest:latest.integration"
+  )
+}
+
+object treadle extends CommonModule with SbtModule {
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    ivy"org.scala-lang.modules:scala-jline:2.12.1",
+    ivy"org.json4s::json4s-native:3.6.7"
   )
 }
 

@@ -34,3 +34,6 @@
 [submodule "firrtl"]
 	path = firrtl
 	url = https://github.com/ucb-bar/firrtl
+[submodule "treadle"]
+	path = treadle
+	url = https://github.com/freechipsproject/treadle
