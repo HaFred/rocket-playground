@@ -3,118 +3,16 @@ import mill.modules.Util
 import scalalib._
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import mill.contrib.buildinfo.BuildInfo
+import $file.chisel3.build
+import $file.firrtl.build
 
-object firrtl extends ScalaModule with SbtModule {
-  def scalaVersion = "2.12.10"
-
-  def antlr4Version = "4.7.1"
-
-  def protocVersion = "3.5.1"
-
-  override def scalacOptions = Seq(
-    "-deprecation",
-    "-unchecked",
-    "-Yrangepos", // required by SemanticDB compiler plugin
-    "-Ywarn-unused-import" // required by `RemoveUnused` rule
-  )
-
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    ivy"${scalaOrganization()}:scala-reflect:${scalaVersion()}",
-    ivy"com.github.scopt::scopt:3.7.1",
-    ivy"net.jcazevedo::moultingyaml:0.4.1",
-    ivy"org.json4s::json4s-native:3.6.7",
-    ivy"org.apache.commons:commons-text:1.7",
-    ivy"org.antlr:antlr4-runtime:4.7.1",
-    ivy"com.google.protobuf:protobuf-java:3.5.1"
-  )
-
-  override def generatedSources = T {
-    generatedAntlr4Source() ++ generatedProtoSources()
-  }
-
-  /** antlr4 */
-
-  def antlrSource = T.source {
-    millSourcePath / 'src / 'main / 'antlr4 / "FIRRTL.g4"
-  }
-
-  def antlr4Jar = T {
-    Util.download(s"https://www.antlr.org/download/antlr-$antlr4Version-complete.jar")
-  }
-
-  def generatedAntlr4Source = T.sources {
-    os.proc("java",
-      "-jar", antlr4Jar().path.toString,
-      "-o", T.ctx.dest.toString,
-      "-lib", antlrSource().path.toString,
-      "-package", "firrtl.antlr",
-      "-no-listener", "-visitor",
-      antlrSource().path.toString
-    ).call()
-    T.ctx.dest
-  }
-
-  /** protoc */
-
-  def protobufSource = T.source {
-    millSourcePath / 'src / 'main / 'proto / "firrtl.proto"
-  }
-
-  def protocJar = T {
-    Util.download(s"https://repo.maven.apache.org/maven2/com/github/os72/protoc-jar/$protocVersion/protoc-jar-$protocVersion.jar")
-  }
-
-  def generatedProtoSources = T.sources {
-    os.proc("java",
-      "-jar", protocJar().path.toString,
-      "-I", protobufSource().path / os.up,
-      s"--java_out=${T.ctx.dest.toString}",
-      protobufSource().path.toString()
-    ).call()
-    T.ctx.dest / "firrtl"
-  }
+object myfirrtl extends firrtl.build.firrtlCrossModule("2.12.10") {
+  override def millSourcePath = super.millSourcePath / 'firrtl
 }
 
-object chisel3 extends CommonModule with SbtModule with BuildInfo {
-  override def moduleDeps: Seq[ScalaModule] = Seq(firrtl, coreMacros, chiselFrontend)
-
-  override def scalacOptions = Seq(
-    "-deprecation",
-    "-explaintypes",
-    "-feature",
-    "-language:reflectiveCalls",
-    "-unchecked",
-    "-Xlint:infer-any"
-  )
-
-  override def ivyDeps = Agg(
-    ivy"com.github.scopt::scopt:3.7.1"
-  )
-
-  override def generatedSources = T {
-    println("debuging")
-    println(generatedBuildInfo())
-    Seq(generatedBuildInfo()._2)
-  }
-
-  override def buildInfoPackageName = Some("chisel3")
-
-  override def buildInfoMembers: T[Map[String, String]] = T {
-    Map(
-      "buildInfoPackage" -> artifactName(),
-      "version" -> "v3.3",
-      "scalaVersion" -> scalaVersion()
-    )
-  }
-
-  object coreMacros extends CommonModule {
-    override def moduleDeps: Seq[ScalaModule] = Seq(firrtl)
-  }
-
-  object chiselFrontend extends CommonModule {
-    override def moduleDeps: Seq[ScalaModule] = Seq(firrtl, coreMacros)
-  }
-
+object mychisel3 extends chisel3.build.chisel3CrossModule("2.12.10") {
+  override def millSourcePath = super.millSourcePath / 'chisel3
+  def firrtlModule: Option[PublishModule] = Some(myfirrtl)
 }
 
 trait CommonModule extends ScalaModule {
@@ -122,7 +20,7 @@ trait CommonModule extends ScalaModule {
 
   override def scalacOptions = Seq("-Xsource:2.11")
 
-  override def moduleDeps: Seq[ScalaModule] = Seq(chisel3)
+  override def moduleDeps: Seq[ScalaModule] = Seq(mychisel3)
 
   private val macroParadise = ivy"org.scalamacros:::paradise:2.1.0"
 
