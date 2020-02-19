@@ -1,4 +1,4 @@
-package arty100t
+package fpga
 
 import freechips.rocketchip._
 import amba.axi4.AXI4Bundle

@@ -1,9 +1,8 @@
 package wishbone
 
-import freechips.rocketchip._
-import config._
-import diplomacy._
 import chisel3._
+import freechips.rocketchip.config._
+import freechips.rocketchip.diplomacy._
 
 class WBDemoMaster(implicit p: Parameters) extends LazyModule {
   val s = LazyModule(new WBDemoSlave)

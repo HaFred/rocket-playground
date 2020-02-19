@@ -1,4 +1,4 @@
-package arty100t
+package fpga
 
 /** This class is designed for arty100t board */
 

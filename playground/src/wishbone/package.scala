@@ -1,3 +1,5 @@
+package wishbone
+
 import freechips.rocketchip.diplomacy._
 
 package object wishbone {
