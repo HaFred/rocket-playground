@@ -34,8 +34,18 @@ object chiseltest extends CommonModule with SbtModule {
   
   override def ivyDeps = super.ivyDeps() ++ Agg(
     ivy"com.lihaoyi::utest:latest.integration",
+    ivy"com.lihaoyi::os-lib:latest.integration",
     ivy"org.scalatest::scalatest:latest.integration"
   )
+
+  object test extends Tests {
+    def ivyDeps = Agg(
+      ivy"org.scalatest::scalatest:3.0.8",
+      ivy"org.scalacheck::scalacheck:1.14.3",
+    )
+
+    def testFrameworks = Seq("org.scalatest.tools.Framework")
+  }
 }
 
 object treadle extends CommonModule with SbtModule {
