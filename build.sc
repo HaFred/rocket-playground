@@ -128,3 +128,6 @@ object playground extends CommonModule {
 
 }
 
+object ucore extends CommonModule {
+  override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, rocketchip.macros, shells)
+}
