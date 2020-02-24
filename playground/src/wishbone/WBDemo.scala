@@ -1,8 +1,11 @@
 package wishbone
 
 import chisel3._
+import chisel3.stage.ChiselGeneratorAnnotation
+import firrtl.options.TargetDirAnnotation
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
+import playground._
 
 class WBDemoMaster(implicit p: Parameters) extends LazyModule {
   val s = LazyModule(new WBDemoSlave)
@@ -56,4 +59,11 @@ class WBDemoSlave(implicit p: Parameters) extends LazyModule {
       }
     }
   }
+}
+
+object WBDemo extends App {
+  (new chisel3.stage.ChiselStage).run(Seq(
+    ChiselGeneratorAnnotation(() => LazyModule(configToLazyModule(classOf[WBDemoMaster], new Config(Parameters.empty))).module),
+    TargetDirAnnotation("circuit")
+  ))
 }
