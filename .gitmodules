@@ -37,3 +37,6 @@
 [submodule "treadle"]
 	path = treadle
 	url = https://github.com/freechipsproject/treadle
+[submodule "sodor"]
+	path = sodor
+	url = ./sodor
