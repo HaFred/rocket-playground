@@ -11,6 +11,8 @@ import playground._
 import chisel3._
 import chisel3.util._
 import chisel3.experimental.{Analog, ExtModule}
+import chisel3.stage.ChiselGeneratorAnnotation
+import firrtl.options.TargetDirAnnotation
 import sifive.fpgashells.shell._
 
 
@@ -131,4 +133,11 @@ class FPGATop extends MultiIOModule {
   topJtag.jtag.TDI := fpgaJtag.tdi
   fpgaJtag.tdo := topJtag.jtag.TDO.data
   fpgaJtag.tdoEnable := topJtag.jtag.TDO.driven
+}
+
+object elaborate extends App {
+  (new chisel3.stage.ChiselStage).run(Seq(
+    ChiselGeneratorAnnotation(() => new FPGATop),
+    TargetDirAnnotation("circuit")
+  ))
 }

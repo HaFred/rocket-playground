@@ -14,7 +14,7 @@ TODO
 ## Flow
 1. RTL build:
 ```
-mill -i playground.tests.test "playground.tests.play.arty"
+mill -i playground.runMain "playground.fpga.elaborate"
 ```
 
 2. Vivado Flow
@@ -33,3 +33,6 @@ This flow didn't use FPGA shell, thus need vivado GUI for integration.
 3.2 riscv64-linux-gnu-gdb
 
 4. Run OpenSBI 
+
+## Sodor Flow
+TODO
