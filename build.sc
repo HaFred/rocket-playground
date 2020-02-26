@@ -65,14 +65,14 @@ object rocketchip extends CommonModule with SbtModule {
     ivy"org.json4s::json4s-jackson:latest.integration"
   )
 
-  object hardfloat extends CommonModule with SbtModule
-
   object macros extends CommonModule with SbtModule
 
   override def moduleDeps = super.moduleDeps ++ Seq(config, macros, hardfloat)
 
   override def mainClass = Some("rocketchip.Generator")
 }
+
+object hardfloat extends CommonModule with SbtModule
 
 object inclusivecache extends CommonModule {
   override def millSourcePath = super.millSourcePath / 'design / 'craft / 'inclusivecache

@@ -40,3 +40,6 @@
 [submodule "sodor"]
 	path = sodor
 	url = https://github.com/sequencer/sodor
+[submodule "hardfloat"]
+	path = hardfloat
+	url = https://github.com/ucb-bar/berkeley-hardfloat
