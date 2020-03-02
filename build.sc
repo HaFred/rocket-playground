@@ -131,3 +131,6 @@ object playground extends CommonModule {
 object sodor extends CommonModule {
   override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells)
 }
+object boom extends CommonModule with SbtModule {
+  override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells)
+}

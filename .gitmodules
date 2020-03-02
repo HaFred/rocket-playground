@@ -43,3 +43,6 @@
 [submodule "hardfloat"]
 	path = hardfloat
 	url = https://github.com/ucb-bar/berkeley-hardfloat
+[submodule "boom"]
+	path = boom
+	url = https://github.com/riscv-boom/riscv-boom
