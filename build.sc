@@ -88,14 +88,6 @@ object shells extends CommonModule with SbtModule {
   override def moduleDeps = super.moduleDeps ++ Seq(rocketchip, blocks)
 }
 
-object freedom extends CommonModule with SbtModule {
-  override def moduleDeps = super.moduleDeps ++ Seq(rocketchip, blocks, nvdla, shells)
-}
-
-object nvdla extends CommonModule with SbtModule {
-  override def moduleDeps = super.moduleDeps ++ Seq(rocketchip)
-}
-
 object skeleton extends CommonModule {
   override def millSourcePath = testsocket.basePath
 

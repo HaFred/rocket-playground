@@ -16,12 +16,6 @@
 [submodule "testsocket"]
 	path = testsocket
 	url = https://github.com/sifive/soc-testsocket-sifive
-[submodule "nvdla"]
-	path = nvdla
-	url = https://github.com/sifive/block-nvdla-sifive/
-[submodule "freedom"]
-	path = freedom
-	url = https://github.com/sifive/freedom
 [submodule "playground/debugger/opensbi"]
 	path = playground/debugger/opensbi
 	url = https://github.com/riscv/opensbi
