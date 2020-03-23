@@ -10,7 +10,7 @@ import freechips.rocketchip.util._
 import freechips.rocketchip.tilelink._
 
 class IDMapGenerator(numIds: Int) extends Module {
-  require (numIds > 0)
+  require(numIds > 0)
 
   val w = log2Up(numIds)
   val io = IO(new Bundle {
@@ -21,115 +21,79 @@ class IDMapGenerator(numIds: Int) extends Module {
   io.free.ready := true.B
 
   // True indicates that the id is available
-  val bitmap = RegInit(((BigInt(1) << numIds) -  1).U(numIds.W))
+  val bitmap = RegInit(((BigInt(1) << numIds) - 1).U(numIds.W))
 
   val select = (~(leftOR(bitmap) << 1)).asUInt & bitmap
   io.alloc.bits := OHToUInt(select)
   io.alloc.valid := bitmap.orR()
 
   val clr = WireDefault(0.U(numIds.W))
-  when (io.alloc.fire()) { clr := UIntToOH(io.alloc.bits) }
+  when(io.alloc.fire()) {
+    clr := UIntToOH(io.alloc.bits)
+  }
 
   val set = WireDefault(0.U(numIds.W))
-  when (io.free.fire()) { set := UIntToOH(io.free.bits) }
+  when(io.free.fire()) {
+    set := UIntToOH(io.free.bits)
+  }
 
   bitmap := (bitmap & (~clr).asUInt) | set
-  assert (!io.free.valid || !(bitmap & (~clr).asUInt)(io.free.bits)) // No double freeing
+  assert(!io.free.valid || !(bitmap & (~clr).asUInt) (io.free.bits)) // No double freeing
 }
 
-object LFSR64
-{
-  def apply(increment: Bool = true.B): UInt =
-  {
+object LFSR64 {
+  def apply(increment: Bool = true.B): UInt = {
     val wide = 64
     val lfsr = Reg(UInt(wide.W)) // random initial value based on simulation seed
     val xor = lfsr(0) ^ lfsr(1) ^ lfsr(3) ^ lfsr(4)
-    when (increment) {
-      lfsr := Mux(lfsr === 0.U, 1.U, Cat(xor, lfsr(wide-1,1)))
+    when(increment) {
+      lfsr := Mux(lfsr === 0.U, 1.U, Cat(xor, lfsr(wide - 1, 1)))
     }
     lfsr
   }
 }
 
 
-class LFSRNoiseMaker(wide: Int) extends Module
-{
-  val io = IO(new Bundle {
-    val inc = Input(Bool())
-    val random = Output(Bool())
-  })
-  val lfsrs = Seq.fill((wide+63)/64) { LFSR64(io.inc) }
-  io.random := Cat(lfsrs)(wide-1,0)
-}
-
-object LFSRNoiseMaker {
-  def apply(wide: Int, increment: Bool = true.B): UInt = {
-    val nm = Module(new LFSRNoiseMaker(wide))
-    nm.io.inc := increment
-    nm.io.random
-  }
-}
-
 /** TLFuzzer drives test traffic over TL2 links. It generates a sequence of randomized
   * requests, and issues legal ones into the DUT. TODO: Currently the fuzzer only generates
   * memory operations, not permissions transfers.
-  * @param nOperations is the total number of operations that the fuzzer must complete for the test to pass (0 => run forever)
-  * @param inFlight is the number of operations that can be in-flight to the DUT concurrently
-  * @param noiseMaker is a function that supplies a random UInt of a given width every time inc is true
+  *
+  * @param inFlight   is the number of operations that can be in-flight to the DUT concurrently
   */
-class TLFuzzer(
-                nOperations: Int,
-                inFlight: Int = 32,
-                noiseMaker: (Int, Bool, Int) => UInt = {
-                  (wide: Int, increment: Bool, abs_values: Int) =>
-                    LFSRNoiseMaker(wide=wide, increment=increment)
-                },
-                noModify: Boolean = false,
-                overrideAddress: Option[AddressSet] = None,
-                nOrdered: Option[Int] = None)(implicit p: Parameters) extends LazyModule
-{
+class TLFuzzer(inFlight: Int = 32,
+               nOrdered: Option[Int] = None)(implicit p: Parameters) extends LazyModule {
+
+  def noiseMaker(width: Int, increment: Bool): UInt = chisel3.util.random.LFSR(64, increment = true.B)
 
   val clientParams = if (nOrdered.isDefined) {
     val n = nOrdered.get
     require(n > 0, s"nOrdered must be > 0, not $n")
     require((inFlight % n) == 0, s"inFlight (${inFlight}) must be evenly divisible by nOrdered (${nOrdered}).")
-    Seq.tabulate(n) {i =>
-      TLClientParameters(name =s"OrderedFuzzer$i",
-        sourceId = IdRange(i * (inFlight/n),  (i + 1)*(inFlight/n)),
+    Seq.tabulate(n) { i =>
+      TLMasterParameters.v1(name = s"OrderedFuzzer$i",
+        sourceId = IdRange(i * (inFlight / n), (i + 1) * (inFlight / n)),
         requestFifo = true)
     }
   } else {
-    Seq(TLClientParameters(
+    Seq(TLMasterParameters.v1(
       name = "Fuzzer",
-      sourceId = IdRange(0,inFlight)
+      sourceId = IdRange(0, inFlight)
     ))
   }
 
-  val node = TLClientNode(Seq(TLClientPortParameters(clientParams)))
+  val node = TLClientNode(Seq(TLMasterPortParameters.v1(clientParams)))
 
   lazy val module = new LazyModuleImp(this) {
-    val io = IO(new Bundle {
-      val finished = Output(Bool())
-    })
 
-    val (out, edge) = node.out(0)
+    val (out, edge) = node.out.head
 
     // Extract useful parameters from the TL edge
-    val maxTransfer  = edge.manager.maxTransfer
-    val beatBytes    = edge.manager.beatBytes
-    val maxLgBeats   = log2Up(maxTransfer/beatBytes)
-    val addressBits  = log2Up(overrideAddress.map(_.max).getOrElse(edge.manager.maxAddress))
-    val sizeBits     = edge.bundle.sizeBits
-    val dataBits     = edge.bundle.dataBits
-
-    // Progress through operations
-    val num_reqs = RegInit(nOperations.U(log2Up(nOperations+1).W))
-    val num_resps = RegInit(nOperations.U(log2Up(nOperations+1).W))
-    if (nOperations>0) {
-      io.finished := num_resps === 0.U
-    } else {
-      io.finished := false.B
-    }
+    val maxTransfer = edge.manager.maxTransfer
+    val beatBytes = edge.manager.beatBytes
+    val maxLgBeats = log2Up(maxTransfer / beatBytes)
+    val addressBits = edge.manager.maxAddress.toInt
+    val sizeBits = edge.bundle.sizeBits
+    val dataBits = edge.bundle.dataBits
 
     // Progress within each operation
     val a = out.a.bits
@@ -144,46 +108,57 @@ class TLFuzzer(
     // Increment random number generation for the following subfields
     val inc = Wire(Bool())
     val inc_beat = Wire(Bool())
-    val arth_op_3 = noiseMaker(3, inc, 0)
-    val arth_op   = Mux(arth_op_3 > 4.U, 4.U, arth_op_3)
-    val log_op    = noiseMaker(2, inc, 0)
-    val amo_size  = 2.U + noiseMaker(1, inc, 0) // word or dword
-    val size      = noiseMaker(sizeBits, inc, 0)
-    val rawAddr   = noiseMaker(addressBits, inc, 2)
-    val addr      = overrideAddress.map(_.legalize(rawAddr)).getOrElse(rawAddr) & (~UIntToOH1(size, addressBits)).asUInt
-    val mask      = noiseMaker(beatBytes, inc_beat, 2) & edge.mask(addr, size)
-    val data      = noiseMaker(dataBits, inc_beat, 2)
+    val arth_op_3 = noiseMaker(3, inc)
+    val arth_op = Mux(arth_op_3 > 4.U, 4.U, arth_op_3)
+    val log_op = noiseMaker(2, inc)
+    val amo_size = 2.U + noiseMaker(1, inc) // word or dword
+    val size = noiseMaker(sizeBits, inc)
+    val rawAddr = noiseMaker(addressBits, inc)
+    val addr = noiseMaker(addressBits, inc)
+    val mask = noiseMaker(beatBytes, inc_beat) & edge.mask(addr, size)
+    val data = noiseMaker(dataBits, inc_beat)
 
     // Actually generate specific TL messages when it is legal to do so
-    val (glegal,  gbits)  = edge.Get(src, addr, size)
-    val (pflegal, pfbits) = if(edge.manager.anySupportPutFull) {
+    val (glegal, gbits) = edge.Get(src, addr, size)
+    val (pflegal, pfbits) = if (edge.manager.anySupportPutFull) {
       edge.Put(src, addr, size, data)
-    } else { (glegal, gbits) }
-    val (pplegal, ppbits) = if(edge.manager.anySupportPutPartial) {
+    } else {
+      (glegal, gbits)
+    }
+    val (pplegal, ppbits) = if (edge.manager.anySupportPutPartial) {
       edge.Put(src, addr, size, data, mask)
-    } else { (glegal, gbits) }
-    val (alegal,  abits)  = if(edge.manager.anySupportArithmetic) {
+    } else {
+      (glegal, gbits)
+    }
+    val (alegal, abits) = if (edge.manager.anySupportArithmetic) {
       edge.Arithmetic(src, addr, size, data, arth_op)
-    } else { (glegal, gbits) }
-    val (llegal,  lbits)  = if(edge.manager.anySupportLogical) {
+    } else {
+      (glegal, gbits)
+    }
+    val (llegal, lbits) = if (edge.manager.anySupportLogical) {
       edge.Logical(src, addr, size, data, log_op)
-    } else { (glegal, gbits) }
-    val (hlegal,  hbits)  = if(edge.manager.anySupportHint) {
+    } else {
+      (glegal, gbits)
+    }
+    val (hlegal, hbits) = if (edge.manager.anySupportHint) {
       edge.Hint(src, addr, size, 0.U)
-    } else { (glegal, gbits) }
+    } else {
+      (glegal, gbits)
+    }
 
     val legal_dest = edge.manager.containsSafe(addr)
 
     // Pick a specific message to try to send
-    val a_type_sel  = noiseMaker(3, inc, 0)
+    val a_type_sel = noiseMaker(3, inc)
 
     val legal = legal_dest && MuxLookup(a_type_sel, glegal, Seq(
       "b000".U -> glegal,
-      "b001".U -> (pflegal && !noModify.B),
-      "b010".U -> (pplegal && !noModify.B),
-      "b011".U -> (alegal && !noModify.B),
-      "b100".U -> (llegal && !noModify.B),
-      "b101".U -> hlegal))
+      "b001".U -> pflegal,
+      "b010".U -> pplegal,
+      "b011".U -> alegal,
+      "b100".U -> llegal,
+      "b101".U -> hlegal)
+    )
 
     val bits = MuxLookup(a_type_sel, gbits, Seq(
       "b000".U -> gbits,
@@ -191,16 +166,16 @@ class TLFuzzer(
       "b010".U -> ppbits,
       "b011".U -> abits,
       "b100".U -> lbits,
-      "b101".U -> hbits))
+      "b101".U -> hbits)
+    )
 
     // Wire up Fuzzer flow control
-    val a_gen = if (nOperations>0) num_reqs =/= 0.U else true.B
-    out.a.valid := !reset.asBool && a_gen && legal && (!a_first || idMap.io.alloc.valid)
-    idMap.io.alloc.ready := a_gen && legal && a_first && out.a.ready
+    out.a.valid := !reset.asBool && legal && (!a_first || idMap.io.alloc.valid)
+    idMap.io.alloc.ready := legal && a_first && out.a.ready
     idMap.io.free.valid := d_first && out.d.fire()
     idMap.io.free.bits := out.d.bits.source
 
-    out.a.bits  := bits
+    out.a.bits := bits
     out.b.ready := true.B
     out.c.valid := false.B
     out.d.ready := true.B
@@ -210,67 +185,36 @@ class TLFuzzer(
     inc := !legal || req_done
     inc_beat := !legal || out.a.fire()
 
-    if (nOperations>0) {
-      when (out.a.fire() && a_last) {
-        num_reqs := num_reqs - 1.U
-      }
 
-      when (out.d.fire() && d_last) {
-        num_resps := num_resps - 1.U
-      }
-    }
   }
 }
 
-object TLFuzzer
-{
-  def apply(
-             nOperations: Int,
-             inFlight: Int = 32,
-             noiseMaker: (Int, Bool, Int) => UInt = {
-               (wide: Int, increment: Bool, abs_values: Int) =>
-                 LFSRNoiseMaker(wide=wide, increment=increment)
-             },
-             noModify: Boolean = false,
-             overrideAddress: Option[AddressSet] = None,
-             nOrdered: Option[Int] = None)(implicit p: Parameters): TLOutwardNode =
-  {
-    val fuzzer = LazyModule(new TLFuzzer(nOperations, inFlight, noiseMaker, noModify, overrideAddress, nOrdered))
+object TLFuzzer {
+  def apply(inFlight: Int = 32,
+            nOrdered: Option[Int] = None)(implicit p: Parameters): TLOutwardNode = {
+    val fuzzer = LazyModule(new TLFuzzer(inFlight, nOrdered))
     fuzzer.node
   }
 }
 
-/** Synthesizeable integration test */
-import freechips.rocketchip.unittest._
-
-class TLFuzzRAM(txns: Int)(implicit p: Parameters) extends LazyModule
-{
-  val ram  = LazyModule(new TLRAM(AddressSet(0x800, 0x7ff)))
+class TLFuzzRAM(implicit p: Parameters) extends LazyModule {
+  val ram = LazyModule(new TLRAM(AddressSet(0x800, 0x7ff)))
   val ram2 = LazyModule(new TLRAM(AddressSet(0, 0x3ff), beatBytes = 16))
-  val xbar= LazyModule(new TLXbar)
-  val fuzz = LazyModule(new TLFuzzer(txns))
+  val xbar = LazyModule(new TLXbar)
+  val fuzz = LazyModule(new TLFuzzer)
 
   xbar.node := fuzz.node
-  ram2.node := TLFragmenter(16, 256) := xbar.node
-  ram.node := TLFragmenter(4, 256) := TLBuffer() := TLWidthWidget(16) := xbar.node
+  ram2.node := xbar.node
+  ram.node := TLFragmenter(4, 16) := TLBuffer() := TLWidthWidget(16) := xbar.node
 
-  lazy val module = new LazyModuleImp(this) with UnitTestModule {
-    io.finished := fuzz.module.io.finished
-  }
+  lazy val module = new LazyModuleImp(this)
 }
-
-class TLFuzzRAMTest(txns: Int = 5000, timeout: Int = 500000)(implicit p: Parameters) extends UnitTest(timeout) {
-  val dut = Module(LazyModule(new TLFuzzRAM(txns)).module)
-  io.finished := dut.io.finished
-}
-
-
 
 object testTLFuzzer extends App {
   implicit val p = Parameters((site, here, up) => {
     case MonitorsEnabled => false
   })
-  RawTester.test(LazyModule(new TLFuzzRAM(0)).module, Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) {
+  RawTester.test(LazyModule(new TLFuzzRAM()).module, Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) {
     c =>
       c.clock.setTimeout(0)
       c.clock.step(10000)
