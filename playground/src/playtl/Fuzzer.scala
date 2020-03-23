@@ -41,29 +41,17 @@ class IDMapGenerator(numIds: Int) extends Module {
   assert(!io.free.valid || !(bitmap & (~clr).asUInt) (io.free.bits)) // No double freeing
 }
 
-object LFSR64 {
-  def apply(increment: Bool = true.B): UInt = {
-    val wide = 64
-    val lfsr = Reg(UInt(wide.W)) // random initial value based on simulation seed
-    val xor = lfsr(0) ^ lfsr(1) ^ lfsr(3) ^ lfsr(4)
-    when(increment) {
-      lfsr := Mux(lfsr === 0.U, 1.U, Cat(xor, lfsr(wide - 1, 1)))
-    }
-    lfsr
-  }
-}
-
 
 /** TLFuzzer drives test traffic over TL2 links. It generates a sequence of randomized
   * requests, and issues legal ones into the DUT. TODO: Currently the fuzzer only generates
   * memory operations, not permissions transfers.
   *
-  * @param inFlight   is the number of operations that can be in-flight to the DUT concurrently
+  * @param inFlight is the number of operations that can be in-flight to the DUT concurrently
   */
 class TLFuzzer(inFlight: Int = 32,
                nOrdered: Option[Int] = None)(implicit p: Parameters) extends LazyModule {
 
-  def noiseMaker(width: Int, increment: Bool): UInt = chisel3.util.random.LFSR(64, increment = true.B)
+  def noiseMaker(width: Int, increment: Bool): UInt = chisel3.util.random.LFSR(512, increment = increment).head(width)
 
   val clientParams = if (nOrdered.isDefined) {
     val n = nOrdered.get
@@ -113,8 +101,7 @@ class TLFuzzer(inFlight: Int = 32,
     val log_op = noiseMaker(2, inc)
     val amo_size = 2.U + noiseMaker(1, inc) // word or dword
     val size = noiseMaker(sizeBits, inc)
-    val rawAddr = noiseMaker(addressBits, inc)
-    val addr = noiseMaker(addressBits, inc)
+    val addr = noiseMaker(addressBits, inc) & (~UIntToOH1(size, addressBits)).asUInt
     val mask = noiseMaker(beatBytes, inc_beat) & edge.mask(addr, size)
     val data = noiseMaker(dataBits, inc_beat)
 
@@ -198,14 +185,15 @@ object TLFuzzer {
 }
 
 class TLFuzzRAM(implicit p: Parameters) extends LazyModule {
-  val ram = LazyModule(new TLRAM(AddressSet(0x800, 0x7ff)))
-  val ram2 = LazyModule(new TLRAM(AddressSet(0, 0x3ff), beatBytes = 16))
+  val ram = LazyModule(new TLRAM(AddressSet(0x100, 0xff)))
+  val ram2 = LazyModule(new TLRAM(AddressSet(0, 0xff), beatBytes = 16))
   val xbar = LazyModule(new TLXbar)
   val fuzz = LazyModule(new TLFuzzer)
+  val ramModel = LazyModule(new TLRAMModel("TLFuzzRAM"))
 
-  xbar.node := fuzz.node
-  ram2.node := xbar.node
-  ram.node := TLFragmenter(4, 16) := TLBuffer() := TLWidthWidget(16) := xbar.node
+  xbar.node := ramModel.node := fuzz.node
+  ram2.node := TLFragmenter(16, 256) := xbar.node
+  ram.node := TLFragmenter(4, 256) := TLWidthWidget(16)  := xbar.node
 
   lazy val module = new LazyModuleImp(this)
 }
