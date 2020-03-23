@@ -51,15 +51,10 @@ case class WBSlavePortParameters(slaves: Seq[WishboneSlaveParameters],
   }
 }
 
-case class WishboneMasterParameters(name: String,
-                                    nodePath: Seq[BaseNode] = Seq(),
-                                    userBits: Seq[UserBits] = Nil) {
-  val userBitsWidth: Int = userBits.map(_.width).sum
-}
+case class WishboneMasterParameters(name: String, nodePath: Seq[BaseNode] = Seq())
 
-case class WBMasterPortParameters(masters: Seq[WishboneMasterParameters]) {
-  val userBitsWidth: Int = masters.map(_.userBitsWidth).max
-}
+
+case class WBMasterPortParameters(masters: Seq[WishboneMasterParameters])
 
 case class WBBundleParameters(addrBits: Int,
                               dataBits: Int,
