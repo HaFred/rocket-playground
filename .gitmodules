@@ -40,3 +40,6 @@
 [submodule "boom"]
 	path = boom
 	url = https://github.com/riscv-boom/riscv-boom
+[submodule "diplomatictester"]
+	path = diplomatictester
+	url = https://github.com/sequencer/diplomatictester

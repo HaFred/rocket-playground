@@ -126,3 +126,18 @@ object sodor extends CommonModule {
 object boom extends CommonModule with SbtModule {
   override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells)
 }
+object diplomatictester extends CommonModule {
+  override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, myfirrtl)
+  def ivyDeps = Agg(
+    ivy"com.lihaoyi::utest:latest.integration",
+    ivy"com.lihaoyi::pprint:latest.integration"
+  )
+  object tests extends Tests {
+    def ivyDeps = Agg(
+      ivy"com.lihaoyi::utest:latest.integration",
+    )
+
+    def testFrameworks = Seq("utest.runner.Framework")
+  }
+
+}

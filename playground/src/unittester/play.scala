@@ -1,67 +1,21 @@
-package unittester
-import chisel3._
-import chisel3.stage.{ChiselGeneratorAnnotation, NoRunFirrtlCompilerAnnotation}
-import chiseltest._
-import chiseltest.experimental._
-import firrtl.options.TargetDirAnnotation
-import firrtl.stage.FirrtlFileAnnotation
-import fpga._
-import freechips.rocketchip.diplomacy.{LazyModule, MixedAdapterNode, MixedNode, SinkNode}
-import playground._
+package chiseltest
 
-class StaticModule[T <: Data](ioLit: T) extends MultiIOModule {
-  val out = IO(Output(chiselTypeOf(ioLit)))
-  out := ioLit
+import chipsalliance.rocketchip.config._
+import firrtl.AnnotationSeq
+import freechips.rocketchip.diplomacy._
+
+abstract class LazyDut()(implicit p: Parameters) extends LazyModule {
+  def testNodes[T <: BaseNode]: Seq[BaseNode]
+  // module is only be allowed to use [[LazyModuleImp]] since tester2 not support [[RawModule]]
+  def module: LazyModuleImp
 }
 
-object play extends App {
-  // filter a lazymodule
-  val lm = LazyModule(
-    configToRocketModule(
-      classOf[CustomArty100TRocketSystem],
-      new CustomArty100TConfig
-    )
-  )
-  val target = lm.getChildren.filter(_.name == "l2").head
-  (new chisel3.stage.ChiselStage).run(
-    Seq(
-      ChiselGeneratorAnnotation(() => target.module),
-      TargetDirAnnotation("circuit"),
-      NoRunFirrtlCompilerAnnotation // speed up test
-    )
-  )
-  
-  // need a small patch to diplomacy
-  //diff --git a/src/main/scala/diplomacy/LazyModule.scala b/src/main/scala/diplomacy/LazyModule.scala
-  //index fb4b27da..d884c42c 100644
-  //--- a/src/main/scala/diplomacy/LazyModule.scala
-  //+++ b/src/main/scala/diplomacy/LazyModule.scala
-  //@@ -118,6 +118,8 @@ abstract class LazyModule()(implicit val p: Parameters)
-  //  }
-  //
-  //  def getChildren = children
-  //
-  //  {+def getNodes = nodes+}
-  //}
-  //
-  //object LazyModule
+class LMTester[L <: LazyDut](lm: L) {
+  def annotationSeq: AnnotationSeq = Seq.empty
 
-  val nodes = target.getNodes
-  nodes.foreach {
-    case n: MixedAdapterNode[_, _, _, _, _, _, _, _] => pprint.pprintln(n.edges)
-    case n: SinkNode[_,_,_,_,_] => pprint.pprintln(n.edges)
+  def test(testFn: LazyModuleImp => Unit): Unit = {
+    val testName = s"lazymodule_test_${System.currentTimeMillis()}"
+    val tester = new RawTester(testName)
+    tester.test(lm.module, annotationSeq)(testFn)
   }
-
-//
-//  // reconstruct interface
-//  (new firrtl.stage.FirrtlStage).run(
-//    Seq(
-//      FirrtlFileAnnotation("circuit/InclusiveCache.fir"),
-//    )
-//  )
-
-  //
-//  RawTester.test(target.module) { dut =>
-//    println(dut.auto.peek())
-//  }
 }
