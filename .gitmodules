@@ -43,3 +43,6 @@
 [submodule "diplomatictester"]
 	path = diplomatictester
 	url = https://github.com/sequencer/diplomatictester
+[submodule "gemmini"]
+	path = gemmini
+	url = https://github.com/ucb-bar/gemmini

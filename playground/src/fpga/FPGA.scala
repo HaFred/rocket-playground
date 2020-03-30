@@ -89,7 +89,7 @@ class BscanJTAG extends MultiIOModule {
 
 
 class FPGATop extends MultiIOModule {
-  val top = Module(LazyModule(configToRocketModule(classOf[CustomArty100TRocketSystem], new CustomArty100TConfig)).module)
+  val top = Module(LazyModule(configToRocketModule(classOf[CustomRocketSystem], new CustomConfig)).module)
 
   val topInterrupts: UInt = top.interrupts
   val fpgaInterrupts = IO(Input(topInterrupts.cloneType))

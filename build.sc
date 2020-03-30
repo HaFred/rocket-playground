@@ -104,7 +104,7 @@ object testsocket extends CommonModule {
 }
 
 object playground extends CommonModule {
-  override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells)
+  override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells, gemmini)
 
   override def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:latest.integration",
@@ -125,6 +125,9 @@ object sodor extends CommonModule {
 }
 object boom extends CommonModule with SbtModule {
   override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, inclusivecache, blocks, shells)
+}
+object gemmini extends CommonModule with SbtModule {
+  override def moduleDeps = super.moduleDeps ++ Seq(rocketchip)
 }
 object diplomatictester extends CommonModule {
   override def moduleDeps = super.moduleDeps ++ Seq(chiseltest, rocketchip, myfirrtl)

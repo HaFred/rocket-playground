@@ -4,26 +4,21 @@ package fpga
 
 /** rocketchip dependency */
 
-import freechips.rocketchip._
-import config._
-import subsystem._
-import devices._
-import debug._
-import diplomaticobjectmodel._
-import devices.tilelink._
-import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree
-import freechips.rocketchip.diplomaticobjectmodel.model.OMComponent
-import freechips.rocketchip.util.ElaborationArtefacts
-import rocket._
-import tile._
+import freechips.rocketchip.config._
+import freechips.rocketchip.devices.debug._
+import freechips.rocketchip.devices.tilelink._
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.rocket._
+import freechips.rocketchip.subsystem._
+import freechips.rocketchip.tile._
+import gemmini.{Gemmini, GemminiConfigs}
 
 /** sifive blocks dependency */
-import sifive.blocks.devices._
-import uart._
-import spi._
+import sifive.blocks.devices.spi._
+import sifive.blocks.devices.uart._
 
 /** Example Top with periphery devices and ports, and a Rocket subsystem */
-class CustomArty100TRocketSystem(implicit p: Parameters) extends RocketSubsystem
+class CustomRocketSystem(implicit p: Parameters) extends RocketSubsystem
   with HasHierarchicalBusTopology
   with HasAsyncExtInterrupts
   with CanHaveMasterAXI4MemPort
@@ -31,10 +26,10 @@ class CustomArty100TRocketSystem(implicit p: Parameters) extends RocketSubsystem
   with HasPeripherySPIFlash
   with HasPeripheryUART {
 
-  override lazy val module = new CustomArty100TRocketSystemModuleImp(this)
+  override lazy val module = new CustomRocketSystemModuleImp(this)
 }
 
-class CustomArty100TRocketSystemModuleImp[+L <: CustomArty100TRocketSystem](_outer: L) extends RocketSubsystemModuleImp(_outer)
+class CustomRocketSystemModuleImp[+L <: CustomRocketSystem](_outer: L) extends RocketSubsystemModuleImp(_outer)
   with HasRTCModuleImp
   with HasExtInterruptsModuleImp
   with HasPeripheryBootROMModuleImp
@@ -42,7 +37,7 @@ class CustomArty100TRocketSystemModuleImp[+L <: CustomArty100TRocketSystem](_out
   with HasPeripheryUARTModuleImp
   with HasPeripheryDebugModuleImp
 
-class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
+class WithNCustomCores(n: Int) extends Config((site, here, up) => {
   case RocketTilesKey => {
     val small = RocketTileParams(
       core = RocketCoreParams(fpu = None, nBreakpoints = 8),
@@ -64,8 +59,16 @@ class WithNCustomArty100TCores(n: Int) extends Config((site, here, up) => {
   }
 })
 
-class CustomArty100TConfig extends Config(
+class CustomConfig extends Config(
   new Config((site, here, up) => {
+    case BuildRoCC => Seq(
+      (p: Parameters) => {
+        implicit val q = p
+        implicit val v = implicitly[ValName]
+        LazyModule(new Gemmini(OpcodeSet.custom3, GemminiConfigs.defaultConfig))
+      }
+    )
+    case SystemBusKey => up(SystemBusKey).copy(beatBytes = 16)
     case PeripheryBusKey => PeripheryBusParams(
       beatBytes = site(XLen) / 8,
       blockBytes = site(CacheBlockBytes),
@@ -83,7 +86,7 @@ class CustomArty100TConfig extends Config(
       SPIFlashParams(fAddress = 0x20000000, fSize = 0x10000000, rAddress = 0x10013000)
     )
   }) ++
-    new WithNCustomArty100TCores(2) ++
+    new WithNCustomCores(2) ++
     new WithInclusiveCache(capacityKB = 32) ++
     new WithJtagDTM ++
     new WithDefaultMemPort() ++
