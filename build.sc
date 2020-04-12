@@ -33,9 +33,8 @@ object chiseltest extends CommonModule with SbtModule {
   override def moduleDeps: Seq[ScalaModule] = super.moduleDeps ++ Seq(treadle)
   
   override def ivyDeps = super.ivyDeps() ++ Agg(
-    ivy"com.lihaoyi::utest:latest.integration",
-    ivy"com.lihaoyi::os-lib:latest.integration",
-    ivy"org.scalatest::scalatest:latest.integration"
+    ivy"org.scalatest::scalatest:3.0.8",
+    ivy"com.lihaoyi::utest:0.7.4"
   )
 
   object test extends Tests {
@@ -108,6 +107,7 @@ object playground extends CommonModule {
 
   override def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:latest.integration",
+    ivy"com.lihaoyi::os-lib:latest.integration",
     ivy"com.lihaoyi::pprint:latest.integration",
     ivy"org.scala-lang.modules::scala-xml:latest.integration"
   )
