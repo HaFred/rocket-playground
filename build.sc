@@ -2,6 +2,7 @@ import mill._
 import mill.modules.Util
 import scalalib._
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
+import $ivy.`com.lihaoyi::mill-contrib-bsp:$MILL_VERSION`
 import mill.contrib.buildinfo.BuildInfo
 import $file.chisel3.build
 import $file.firrtl.build
@@ -39,7 +40,6 @@ object chiseltest extends CommonModule with SbtModule {
 
   object test extends Tests {
     def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.0.8",
       ivy"org.scalacheck::scalacheck:1.14.3",
     )
 
