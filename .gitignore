@@ -1,5 +1,7 @@
 .idea
 .idea_modules
+bsp.log
+.bsp
 out
 test_run_dir
 circuit
