@@ -1,20 +1,15 @@
 package unittester
 
-import freechips.rocketchip._
-import config._
-import diplomacy._
-import playground._
-import chisel3._
-import chisel3.experimental.DataMirror
-import chiseltest._
-import chiseltest.RawTester
-import chiseltest.internal.{VerilatorBackendAnnotation, WriteVcdAnnotation}
-import diplomatictester._
+import chiseltest.{RawTester, _}
+import chiseltest.internal.WriteVcdAnnotation
 import diplomatictester.Utils._
+import diplomatictester._
 import fpga.{CustomArty100TConfig, CustomArty100TRocketSystem, CustomArty100TRocketSystemModuleImp}
-import freechips.rocketchip.subsystem.{BaseSubsystem, WithInclusiveCache}
+import freechips.rocketchip._
+import freechips.rocketchip.config._
+import freechips.rocketchip.diplomacy._
 import logger.{LogLevel, LogLevelAnnotation}
-import os._
+import playground._
 import sifive.blocks.inclusivecache.InclusiveCache
 
 class CustomArty100TRocketSystemDut(implicit p: Parameters) extends CustomArty100TRocketSystem { lm =>
