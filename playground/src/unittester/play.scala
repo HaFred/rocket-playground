@@ -21,7 +21,7 @@ class CustomArty100TRocketSystemDut(implicit p: Parameters) extends CustomArty10
 
 object InclusiveCacheTester extends App {
   val lm = LazyModule(configToRocketModule(classOf[CustomArty100TRocketSystemDut], new CustomArty100TConfig))
-  RawTester.test(lm.module, Seq(WriteVcdAnnotation, LogLevelAnnotation(LogLevel.Info), VerilatorBackendAnnotation)) {
+  RawTester.test(lm.module, Seq(WriteVcdAnnotation, LogLevelAnnotation(LogLevel.Info))) {
     c =>
       c.clock.step()
   }
