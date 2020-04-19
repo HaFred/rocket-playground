@@ -1,11 +1,10 @@
 package unittester
 
+import chiseltest.internal.{VerilatorBackendAnnotation, WriteVcdAnnotation}
 import chiseltest.{RawTester, _}
-import chiseltest.internal.WriteVcdAnnotation
 import diplomatictester.Utils._
 import diplomatictester._
 import fpga.{CustomArty100TConfig, CustomArty100TRocketSystem, CustomArty100TRocketSystemModuleImp}
-import freechips.rocketchip._
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import logger.{LogLevel, LogLevelAnnotation}
@@ -22,7 +21,7 @@ class CustomArty100TRocketSystemDut(implicit p: Parameters) extends CustomArty10
 
 object InclusiveCacheTester extends App {
   val lm = LazyModule(configToRocketModule(classOf[CustomArty100TRocketSystemDut], new CustomArty100TConfig))
-  RawTester.test(lm.module, Seq(WriteVcdAnnotation, LogLevelAnnotation(LogLevel.Info))) {
+  RawTester.test(lm.module, Seq(WriteVcdAnnotation, LogLevelAnnotation(LogLevel.Info), VerilatorBackendAnnotation)) {
     c =>
       c.clock.step()
   }
