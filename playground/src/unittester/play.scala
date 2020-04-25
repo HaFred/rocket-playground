@@ -51,13 +51,41 @@ object InclusiveCacheTester extends App {
       val managerE: ManagerE = out.managerE(edgeOut)
 
       val ctlClientA: ClientA = ctlIn.clientA(ctlEdgeIn)
-      val ctlClientB: ClientB = ctlIn.clientB(ctlEdgeIn)
-      val ctlClientC: ClientC = ctlIn.clientC(ctlEdgeIn)
       val ctlClientD: ClientD = ctlIn.clientD(ctlEdgeIn)
-      val ctlClientE: ClientE = ctlIn.clientE(ctlEdgeIn)
 
-      /** @todo write you own test logic here. */
-      ctlClientA.Get(Poke())(2, edgeInId.start, 0x2010000, 0xff)
-      ctlClientD.AccessAckData(Expect())(2, edgeInId.start, false, false, 0x00)
+      val ctrlBaseAddress = 0x201000
+
+      /** read Config.
+        * ctrl base + 0x000 */
+      ctlClientA.Get(Poke(
+        () => println("reading config group."),
+        () => println("read config group success")
+      ))(2, edgeInId.start, ctrlBaseAddress, 0xff).join()
+      ctlClientD.AccessAckData(Expect(
+        () => println("wait AccessAckData from channel D."),
+        () => println("got AccessAckData")
+      ))(2, edgeInId.start, false, false, BigInt(0x0000000006060801)).joinAndStep(clock)
+
+      /** read flush64
+        * ctrl base + 0x200 */
+      ctlClientA.Get(Poke(
+        () => println("reading flush64."),
+        () => println("read flush64 success.")
+      ))(2, edgeInId.start, ctrlBaseAddress + 0x200, 0xff).join()
+      ctlClientD.AccessAckData(Expect(
+        () => println("wait AccessAckData from channel D."),
+        () => println("got AccessAckData.")
+      ))(2, edgeInId.start, false, false, BigInt(0)).joinAndStep(clock)
+
+      /** read flush32
+        * ctrl base + 0x240 */
+      ctlClientA.Get(Poke(
+        () => println("reading flush32."),
+        () => println("read flush32 success.")
+      ))(2, edgeInId.start, ctrlBaseAddress + 0x240, 0xff).join()
+      ctlClientD.AccessAckData(Expect(
+        () => println("wait AccessAckData from channel D."),
+        () => println("got AccessAckData.")
+      ))(2, edgeInId.start, false, false, BigInt(0)).joinAndStep(clock)
   }
 }
